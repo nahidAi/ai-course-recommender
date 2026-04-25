@@ -17,17 +17,15 @@ Return ONLY valid JSON in this format:
 }
 
 All text must be in Persian.
-No extra text.
+No additional text.
 `;
 
     const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" +
+      "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=" +
         process.env.GEMINI_API_KEY,
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           contents: [
             {
@@ -46,15 +44,14 @@ No extra text.
     if (!response.ok) {
       return res.status(500).json({
         error: "Gemini API Error",
+        status: response.status,
         details: data
       });
     }
 
-    const raw =
-      data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
     let parsed;
-
     try {
       parsed = JSON.parse(raw);
     } catch (e) {
