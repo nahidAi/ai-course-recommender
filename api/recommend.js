@@ -23,50 +23,33 @@ export default async function handler(req, res) {
         model: "gpt-4o-mini",
         input: message,
 
-        // 🔑 طبق متن خطا: پارامتر رفته زیر text
+        // ✅ ساختار درست طبق ارور
         text: {
-          // مقادیر معتبر بسته به نسخه می‌تونه مثلاً:
-          // "plain" | "markdown" | "json" باشه.
-          // اینجا می‌خوایم JSON بگیریم:
-          format: "json",
-        },
+          format: {
+            type: "json"
+          }
+        }
       }),
     });
 
     const completion = await response.json();
 
     if (!response.ok) {
-      // اگر خود API ارور داد، همون متن رو پاس بده به فرانت
       return res.status(response.status).json({
-        error:
-          completion?.error?.message ||
-          `OpenAI error with status ${response.status}`,
+        err completion?.error?.message || "OpenAI error"
       });
     }
 
-    // در Responses API ساختار خروجی معمولاً این‌طوره:
-    // completion.output[0].content[0].text
     const aiText = completion.output?.[0]?.content?.[0]?.text;
 
     if (!aiText) {
-      return res
-        .status(400)
-        .json({ error: "Model returned no structured JSON." });
-    }
-
-    let parsed;
-    try {
-      parsed = JSON.parse(aiText);
-    } catch (e) {
-      // اگر مدل JSON درست برنگردوند
       return res.status(400).json({
-        error: "Model response was not valid JSON.",
-        raw: aiText,
+        error: "Model returned no structured JSON."
       });
     }
 
+    const parsed = JSON.parse(aiText);
     return res.status(200).json(parsed);
+
   } catch (err) {
-    return res.status(500).json({ error: err.message });
-  }
-}
+    return res.status
