@@ -22,12 +22,8 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         model: "gpt-4o-mini",
         input: message,
-
-        // ✅ ساختار درست طبق ارور
         text: {
-          format: {
-            type: "json"
-          }
+          format: { type: "json" }
         }
       }),
     });
@@ -36,15 +32,18 @@ export default async function handler(req, res) {
 
     if (!response.ok) {
       return res.status(response.status).json({
-        err completion?.error?.message || "OpenAI error"
+        error: completion?.error?.message || "OpenAI error"
       });
     }
 
-    const aiText = completion.output?.[0]?.content?.[0]?.text;
+    const aiText =
+      completion.output_text ||
+      completion.output?.[0]?.content?.[0]?.text;
 
     if (!aiText) {
       return res.status(400).json({
-        error: "Model returned no structured JSON."
+        error: "Model returned no structured JSON.",
+        raw: completion
       });
     }
 
@@ -52,4 +51,6 @@ export default async function handler(req, res) {
     return res.status(200).json(parsed);
 
   } catch (err) {
-    return res.status
+    return res.status(500).json({ error: err.message });
+  }
+}
