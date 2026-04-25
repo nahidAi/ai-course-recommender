@@ -17,34 +17,55 @@ export default async function handler(req, res) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`
+        Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
         model: "gpt-4o-mini",
+        input: message,
 
-        // 🔥 ساختار صحیح طبق آخرین نسخه API
-        response_format: { type: "json_object" },
-
-        input: message
-      })
+        // 🔑 طبق متن خطا: پارامتر رفته زیر text
+        text: {
+          // مقادیر معتبر بسته به نسخه می‌تونه مثلاً:
+          // "plain" | "markdown" | "json" باشه.
+          // اینجا می‌خوایم JSON بگیریم:
+          format: "json",
+        },
+      }),
     });
 
     const completion = await response.json();
 
-    if (completion.error) {
-      return res.status(400).json({ error: completion.error.message });
+    if (!response.ok) {
+      // اگر خود API ارور داد، همون متن رو پاس بده به فرانت
+      return res.status(response.status).json({
+        error:
+          completion?.error?.message ||
+          `OpenAI error with status ${response.status}`,
+      });
     }
 
-    // مسیر صحیح خروجی مدل
-    const text = completion.output?.[0]?.content?.[0]?.text;
+    // در Responses API ساختار خروجی معمولاً این‌طوره:
+    // completion.output[0].content[0].text
+    const aiText = completion.output?.[0]?.content?.[0]?.text;
 
-    if (!text) {
-      return res.status(400).json({ error: "Model returned no structured JSON." });
+    if (!aiText) {
+      return res
+        .status(400)
+        .json({ error: "Model returned no structured JSON." });
     }
 
-    const parsed = JSON.parse(text);
+    let parsed;
+    try {
+      parsed = JSON.parse(aiText);
+    } catch (e) {
+      // اگر مدل JSON درست برنگردوند
+      return res.status(400).json({
+        error: "Model response was not valid JSON.",
+        raw: aiText,
+      });
+    }
+
     return res.status(200).json(parsed);
-
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
