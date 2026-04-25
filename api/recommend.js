@@ -1,5 +1,4 @@
 export default async function handler(req, res) {
-  // فقط اجازه POST
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
@@ -11,7 +10,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Message is required" });
     }
 
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const response = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -19,24 +18,16 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: "gpt-4o-mini",
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are an AI assistant that recommends astronomy and physics courses based on user interests.",
-          },
-          {
-            role: "user",
-            content: message,
-          },
-        ],
+        input: `You are an AI course recommender. User message: ${message}.
+Return JSON with keys: recommendation, level, reason, complementary`
       }),
     });
 
     const data = await response.json();
 
-    return res.status(200).json(data);
+    return res.status(200).json(data.output[0].content[0].json);
   } catch (error) {
+    console.error(error);
     return res.status(500).json({ error: "Something went wrong" });
   }
 }
