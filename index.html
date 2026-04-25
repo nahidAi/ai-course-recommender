@@ -39,9 +39,8 @@
 
   <div id="result"></div>
 
- <script>
+<script>
 async function recommendCourse() {
-
   const userText = document.getElementById("userInput").value;
   const resultDiv = document.getElementById("result");
 
@@ -68,67 +67,44 @@ async function recommendCourse() {
 ${userText}
 
 فقط و فقط در قالب JSON پاسخ بده.
-هیچ توضیح اضافه‌ای خارج از JSON ننویس.
-
-فرمت خروجی دقیقاً این باشد:
+فرمت خروجی:
 
 {
   "main_course": "نام دوره",
   "level": "سطح دوره",
   "reason": "دلیل پیشنهاد",
-  "secondary_course": "در صورت نیاز یک دوره مکمل، در غیر این صورت null"
+  "secondary_course": "یا null"
 }
 `;
 
-
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-
+  const response = await fetch("/api/recommend", {
     method: "POST",
-
-    headers: {
-      "Content-Type": "application/json",
-     "Authorization": "Bearer YOUR_API_KEY_HERE"
-
-    },
-
-    body: JSON.stringify({
-      model: "gpt-4o",
-
-      messages: [
-        { role: "user", content: prompt }
-      ]
-    })
-
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message: prompt })
   });
 
   const data = await response.json();
-const aiReply = data.choices[0].message.content;
 
-let parsed;
-
-try {
-  parsed = JSON.parse(aiReply);
-} catch (error) {
-  resultDiv.innerHTML = "خطا در پردازش پاسخ AI";
-  return;
-}
-
-resultDiv.innerHTML = `
-  <h3>✅ پیشنهاد اصلی:</h3>
-  <strong>${parsed.main_course}</strong>
-  <p><b>سطح:</b> ${parsed.level}</p>
-  <p><b>دلیل:</b> ${parsed.reason}</p>
-  ${
-    parsed.secondary_course && parsed.secondary_course !== "null"
-      ? `<p><b>دوره مکمل:</b> ${parsed.secondary_course}</p>`
-      : ""
+  if (data.error) {
+    resultDiv.innerHTML = "خطا در سرور: " + data.error;
+    return;
   }
-`;
 
+  const parsed = data;
 
+  resultDiv.innerHTML = `
+    <h3>✅ پیشنهاد اصلی:</h3>
+    <strong>${parsed.main_course}</strong>
+    <p><b>سطح:</b> ${parsed.level}</p>
+    <p><b>دلیل:</b> ${parsed.reason}</p>
+    ${
+      parsed.secondary_course && parsed.secondary_course !== "null"
+        ? `<p><b>دوره مکمل:</b> ${parsed.secondary_course}</p>`
+        : ""
+    }
+  `;
 }
 </script>
-
 
 </body>
 </html>
