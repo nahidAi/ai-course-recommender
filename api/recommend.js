@@ -6,30 +6,23 @@ export default async function handler(req, res) {
 
     const { message } = req.body;
 
+    // Prompt برای Gemini که خروجی دقیقاً JSON بده
     const systemPrompt = `
-You are an AI course recommender for astronomy courses.
+You are an AI course recommender specializing in astronomy.
 
-Return STRICTLY a valid JSON object in this exact format, with keys in English:
+Return ONLY a valid JSON object EXACTLY in the following format:
 
 {
-  "main": {
-    "title": "string - main recommended course title",
-    "level": "string - beginner / intermediate / advanced (in Persian)",
-    "reason": "string - short explanation in Persian"
-  },
-  "alternatives": [
-    {
-      "title": "string",
-      "level": "string",
-      "reason": "string"
-    }
-  ]
+  "main_course": "string - Persian",
+  "level": "string - beginner / intermediate / advanced in Persian",
+  "reason": "string - Persian",
+  "secondary_course": "string or null"
 }
 
 Rules:
-- Answer in Persian for all text fields (title, level, reason).
-- Do NOT include any extra text before or after the JSON.
-- Do NOT use Markdown.
+- Response must be valid JSON only (no text before or after).
+- All text values must be in Persian.
+- "secondary_course" can be null.
 `;
 
     const response = await fetch(
@@ -45,40 +38,36 @@ Rules:
             {
               parts: [
                 { text: systemPrompt },
-                { text: `User goal: ${message}` },
-              ],
-            },
-          ],
-        }),
+                { text: message }
+              ]
+            }
+          ]
+        })
       }
     );
 
     const data = await response.json();
 
-    const rawText =
+    const raw =
       data.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
-    let jsonResult;
+    let parsedJSON;
 
     try {
-      jsonResult = JSON.parse(rawText);
-    } catch (e) {
-      // اگر JSON نباشد، یک ساختار پیش‌فرض می‌سازیم
-      jsonResult = {
-        main: {
-          title: "پیشنهاد دوره در دسترس نیست",
-          level: "نامشخص",
-          reason: "پاسخ مدل در قالب JSON معتبر نبود.",
-        },
-        alternatives: [],
-        rawText,
+      parsedJSON = JSON.parse(raw);
+    } catch ) {
+      parsedJSON = {
+        main_course: "پاسخ نامعتبر از مدل",
+        level: "نامشخص",
+        reason: "خروجی به صورت JSON معتبر نبود.",
+        secondary_course: null,
+        raw_response: raw
       };
     }
 
-    res.status(200).json(jsonResult);
+    return res.status(200).json(parsedJSON);
+
   } catch (error) {
-    res.status(500).json({
-      error: error.message,
-    });
+    return res.status(500).json({ error: error.message });
   }
 }
