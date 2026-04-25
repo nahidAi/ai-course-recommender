@@ -1,3 +1,5 @@
+// api/recommend.js
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
@@ -6,46 +8,43 @@ export default async function handler(req, res) {
   try {
     const { message } = req.body;
 
-    if (!message) {
-      return res.status(400).json({ error: "Message is required" });
+    const apiKey = process.env.OPENAI_API_KEY;
+
+    if (!apiKey) {
+      return res.status(500).json({ error: "Missing API key" });
     }
 
     const response = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        Authorization: `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: "gpt-4.1-mini"
-,
-        input: [
-          {
-            role: "user",
-            content: `You are an AI course recommender. User message: ${message}. 
-Return JSON like this:
-{
- "recommendation": "...",
- "level": "...",
- "reason": "...",
- "complementary": "..."
-}`
-          }
-        ]
-      }),
+        model: "gpt-4o-mini",
+        response_format: { type: "json_object" },
+
+        input: message
+      })
     });
 
-    const data = await response.json();
+    const completion = await response.json();
 
-    // استخراج امن
-    const output =
-      data?.output?.[0]?.content?.[0]?.json ??
-      { error: "Model returned no structured JSON." };
+    if (completion.error) {
+      return res.status(400).json({ error: completion.error.message });
+    }
 
-    return res.status(200).json(output);
+    const aiJSON =
+      completion.output?.[0]?.content?.[0]?.text || null;
 
-  } catch (error) {
-    console.error("SERVER ERROR:", error);
-    return res.status(500).json({ error: "Server failed to process request." });
+    if (!aiJSON) {
+      return res.status(400).json({ error: "Model returned no structured JSON." });
+    }
+
+    const parsed = JSON.parse(aiJSON);
+    return res.status(200).json(parsed);
+
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
   }
 }
