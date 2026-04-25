@@ -18,16 +18,33 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: "gpt-4o-mini",
-        input: `You are an AI course recommender. User message: ${message}.
-Return JSON with keys: recommendation, level, reason, complementary`
+        input: [
+          {
+            role: "user",
+            content: `You are an AI course recommender. User message: ${message}. 
+Return JSON like this:
+{
+ "recommendation": "...",
+ "level": "...",
+ "reason": "...",
+ "complementary": "..."
+}`
+          }
+        ]
       }),
     });
 
     const data = await response.json();
 
-    return res.status(200).json(data.output[0].content[0].json);
+    // استخراج امن
+    const output =
+      data?.output?.[0]?.content?.[0]?.json ??
+      { error: "Model returned no structured JSON." };
+
+    return res.status(200).json(output);
+
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ error: "Something went wrong" });
+    console.error("SERVER ERROR:", error);
+    return res.status(500).json({ error: "Server failed to process request." });
   }
 }
