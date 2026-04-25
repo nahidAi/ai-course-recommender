@@ -25,6 +25,7 @@
       padding: 15px;
       background: white;
       border-radius: 8px;
+      white-space: pre-wrap;
     }
   </style>
 </head>
@@ -77,32 +78,37 @@ ${userText}
 }
 `;
 
-  const response = await fetch("/api/recommend", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ message: prompt })
-  });
+  try {
+    const response = await fetch("/api/recommend", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: prompt })
+    });
 
-  const data = await response.json();
+    const data = await response.json();
 
-  if (data.error) {
-    resultDiv.innerHTML = "خطا در سرور: " + data.error;
-    return;
-  }
-
-  const parsed = data;
-
-  resultDiv.innerHTML = `
-    <h3>✅ پیشنهاد اصلی:</h3>
-    <strong>${parsed.main_course}</strong>
-    <p><b>سطح:</b> ${parsed.level}</p>
-    <p><b>دلیل:</b> ${parsed.reason}</p>
-    ${
-      parsed.secondary_course && parsed.secondary_course !== "null"
-        ? `<p><b>دوره مکمل:</b> ${parsed.secondary_course}</p>`
-        : ""
+    if (!response.ok || data.error) {
+      resultDiv.innerHTML = "خطا در سرور:\n" + JSON.stringify(data, null, 2);
+      return;
     }
-  `;
+
+    const parsed = data;
+
+    resultDiv.innerHTML = `
+✅ پیشنهاد اصلی:
+${parsed.main_course}
+
+سطح: ${parsed.level}
+دلیل: ${parsed.reason}
+${
+  parsed.secondary_course && parsed.secondary_course !== "null"
+    ? "دوره مکمل: " + parsed.secondary_course
+    : ""
+}
+    `;
+  } catch (e) {
+    resultDiv.innerHTML = "خطای شبکه یا سرور:\n" + e.message;
+  }
 }
 </script>
 
