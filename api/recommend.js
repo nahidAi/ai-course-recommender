@@ -2,7 +2,7 @@ export async function POST(req) {
   try {
     const { message } = await req.json();
 
-    const response = await fetch(
+    const apiRes = await fetch(
       "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=" +
         process.env.GEMINI_API_KEY,
       {
@@ -18,19 +18,31 @@ export async function POST(req) {
       }
     );
 
-    const result = await response.json();
+    const result = await apiRes.json();
 
-    // استخراج متن خروجی مدل
+    // استخراج متن خام از Gemini
     const rawText =
-      result.candidates?.[0]?.content?.parts?.[0]?.text || "";
+      result?.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
-    // تبدیل متن JSON به آبجکت
-    const parsed = JSON.parse(rawText);
+    // اگر خالی بود، همون رو برگردون برای دیباگ
+    if (!rawText) {
+      return Response.json({ error: "NO_TEXT", result }, { status: 500 });
+    }
 
-    // فقط همون آبجکت تمیز رو برگردون
+    // تلاش کن متن رو به JSON تبدیل کنی
+    let parsed;
+    try {
+      parsed = JSON.parse(rawText);
+    } catch (e) {
+      // اگر مدل هنوز توضیح اضافه آورد، همون متن خام رو برگردون
+      return Response.json({ error: "PARSE_FAILED", rawText }, { status: 500 });
+    }
+
     return Response.json(parsed);
   } catch (err) {
-    console.error("SERVER ERROR:", err);
-    return Response.json({ error: "SERVER_FAILED" }, { status: 500 });
+    return Response.json(
+      { error: "SERVER_FAILED", detail: String(err) },
+      { status: 500 }
+    );
   }
 }
