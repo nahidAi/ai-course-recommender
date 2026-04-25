@@ -22,10 +22,8 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         model: "gpt-4o-mini",
 
-        // ******** تغییر مهم ********
-        text: {
-          format: "json"
-        },
+        // 🔥 ساختار صحیح طبق آخرین نسخه API
+        response_format: { type: "json_object" },
 
         input: message
       })
@@ -37,15 +35,14 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: completion.error.message });
     }
 
-    // مسیر درست برای استخراج JSON از مدل جدید
-    const aiText = completion.output?.[0]?.content?.[0]?.text;
+    // مسیر صحیح خروجی مدل
+    const text = completion.output?.[0]?.content?.[0]?.text;
 
-    if (!aiText) {
+    if (!text) {
       return res.status(400).json({ error: "Model returned no structured JSON." });
     }
 
-    const parsed = JSON.parse(aiText);
-
+    const parsed = JSON.parse(text);
     return res.status(200).json(parsed);
 
   } catch (err) {
