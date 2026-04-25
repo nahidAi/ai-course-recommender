@@ -6,27 +6,22 @@ export default async function handler(req, res) {
 
     const { message } = req.body;
 
-    // Prompt برای Gemini که خروجی دقیقاً JSON بده
     const systemPrompt = `
-You are an AI course recommender specializing in astronomy.
-
-Return ONLY a valid JSON object EXACTLY in the following format:
+Return ONLY valid JSON in this format:
 
 {
-  "main_course": "string - Persian",
-  "level": "string - beginner / intermediate / advanced in Persian",
-  "reason": "string - Persian",
+  "main_course": "string",
+  "level": "string",
+  "reason": "string",
   "secondary_course": "string or null"
 }
 
-Rules:
-- Response must be valid JSON only (no text before or after).
-- All text values must be in Persian.
-- "secondary_course" can be null.
+All text must be in Persian.
+No extra text.
 `;
 
     const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=" +
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" +
         process.env.GEMINI_API_KEY,
       {
         method: "POST",
@@ -48,26 +43,33 @@ Rules:
 
     const data = await response.json();
 
+    if (!response.ok) {
+      return res.status(500).json({
+        error: "Gemini API Error",
+        details: data
+      });
+    }
+
     const raw =
       data.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
-    let parsedJSON;
+    let parsed;
 
     try {
-      parsedJSON = JSON.parse(raw);
-    } catch ) {
-      parsedJSON = {
-        main_course: "پاسخ نامعتبر از مدل",
-        level: "نامشخص",
-        reason: "خروجی به صورت JSON معتبر نبود.",
-        secondary_course: null,
+      parsed = JSON.parse(raw);
+    } catch (e) {
+      return res.status(500).json({
+        error: "Invalid JSON from Gemini",
         raw_response: raw
-      };
+      });
     }
 
-    return res.status(200).json(parsedJSON);
+    return res.status(200).json(parsed);
 
   } catch (error) {
-    return res.status(500).json({ error: error.message });
+    return res.status(500).json({
+      error: "Server crash",
+      details: error.message
+    });
   }
 }
