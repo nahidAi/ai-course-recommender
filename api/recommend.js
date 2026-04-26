@@ -9,16 +9,16 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Query is required" });
   }
 
+  const apiKey = process.env.GEMINI_API_KEY;
+
+  if (!apiKey) {
+    return res.status(500).json({ error: "GEMINI_API_KEY missing" });
+  }
+
   try {
-    const apiKey = process.env.GEMINI_API_KEY;
-
-    if (!apiKey) {
-      return res.status(500).json({ error: "GEMINI_API_KEY is not set" });
-    }
-
-    // فراخوانی Gemini
     const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + apiKey,
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=" +
+        apiKey,
       {
         method: "POST",
         headers: {
@@ -27,11 +27,8 @@ export default async function handler(req, res) {
         body: JSON.stringify({
           contents: [
             {
-              parts: [
-                {
-                  text: query
-                }
-              ]
+              role: "user",
+              parts: [{ text: query }]
             }
           ]
         })
@@ -40,18 +37,17 @@ export default async function handler(req, res) {
 
     const data = await response.json();
 
-    // اگر ارور از سمت Gemini برگشته بود، به کلاینت پاسش بده
-    if (!response.ok) {
-      console.error("GEMINI ERROR:", data);
-      return res.status(response.status).json({ error: data });
-    }
+    console.log("GEMINI RESPONSE:", data);
 
+    // نسخه جدید Gemini این شکل از خروجی را دارد:
     const answer =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text || "No response";
+      data?.candidates?.[0]?.content?.parts?.[0]?.text ||
+      data?.candidates?.[0]?.content?.parts?.[0]?.text ||
+      "No response";
 
-    return res.status(200).json({ answer });
+    res.status(200).json({ answer });
   } catch (err) {
     console.error("SERVER ERROR:", err);
-    return res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: "Server error" });
   }
 }
