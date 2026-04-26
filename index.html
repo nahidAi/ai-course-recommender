@@ -6,30 +6,27 @@
 
 <style>
 body{
-font-family:sans-serif;
-direction:rtl;
-padding:40px;
-background:#f5f5f5;
+  font-family:sans-serif;
+  direction:rtl;
+  padding:40px;
+  background:#f5f5f5;
 }
-
 textarea{
-width:100%;
-height:100px;
-margin-top:10px;
+  width:100%;
+  height:100px;
+  margin-top:10px;
 }
-
 button{
-margin-top:10px;
-padding:10px 20px;
-cursor:pointer;
+  margin-top:10px;
+  padding:10px 20px;
+  cursor:pointer;
 }
-
 #result{
-margin-top:20px;
-padding:15px;
-background:white;
-border-radius:8px;
-white-space:pre-wrap;
+  margin-top:20px;
+  padding:15px;
+  background:white;
+  border-radius:8px;
+  white-space:pre-wrap;
 }
 </style>
 
@@ -39,59 +36,93 @@ white-space:pre-wrap;
 <h2>پیشنهاد هوشمند دوره نجوم</h2>
 
 <label>هدفت از یادگیری چیه؟</label>
+<textarea id="userInput" placeholder="مثلاً می‌خوام درباره سیاه‌چاله‌ها بیشتر بدونم..."></textarea>
 
-<textarea id="userInput"
-placeholder="مثلاً می‌خوام درباره سیاه‌چاله‌ها بیشتر بدونم..."></textarea>
-
-<button onclick="recommendCourse()">پیشنهاد بده</button>
+<button id="recommendBtn">پیشنهاد بده</button>
 
 <div id="result"></div>
 
 <script>
 
+// اتصال دکمه به تابع — تضمینی
+document.getElementById("recommendBtn").addEventListener("click", recommendCourse);
+
 async function recommendCourse(){
 
-const userText = document.getElementById("userInput").value.trim();
-const resultDiv = document.getElementById("result");
+  const userText = document.getElementById("userInput").value.trim();
+  const resultDiv = document.getElementById("result");
 
-if(!userText){
-resultDiv.innerText="لطفاً هدفت رو بنویس 🌌";
-return;
+  if(!userText){
+    resultDiv.innerText = "لطفاً هدفت رو بنویس 🌌";
+    return;
+  }
+
+  resultDiv.innerText = "در حال تحلیل درخواست شما...";
+
+  // پرامپت امن بدون template literal
+  const prompt =
+"شما یک مشاور حرفه‌ای مسیر یادگیری نجوم هستید.\n"+
+"\n"+
+"از بین دوره‌های زیر بهترین گزینه را انتخاب کن.\n"+
+"\n"+
+"دوره‌ها:\n"+
+"1. کیهان‌شناسی و دینامیک کهکشان جامع پیشرفته (پیشرفته)\n"+
+"2. اخترفیزیک جامع (متوسط)\n"+
+"3. حساب دیفرانسیل و انتگرال (پایه)\n"+
+"4. مکانیک سماوی (پیشرفته)\n"+
+"5. نجوم رصدی (مبتدی)\n"+
+"\n"+
+"هدف کاربر:\n"+
+userText+
+"\n\n"+
+"فقط در قالب JSON پاسخ بده:\n"+
+"{\n"+
+"  \"main_course\": \"نام دوره\",\n"+
+"  \"level\": \"سطح دوره\",\n"+
+"  \"reason\": \"دلیل پیشنهاد\",\n"+
+"  \"secondary_course\": \"یا null\"\n"+
+"}";
+
+  try {
+    const request = await fetch("/api/recommend", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ message: prompt })
+    });
+
+    const data = await request.json().catch(()=>null);
+
+    if(!data){
+      resultDiv.innerText = "پاسخ سرور JSON معتبر نبود.";
+      return;
+    }
+
+    if(!request.ok || data.error){
+      resultDiv.innerText = "خطای سرور:\n" + JSON.stringify(data,null,2);
+      return;
+    }
+
+    const main = data.main_course || "نامشخص";
+    const level = data.level || "نامشخص";
+    const reason = data.reason || "بدون توضیح";
+    const secondary = data.secondary_course;
+
+    let output = 
+      "✅ پیشنهاد اصلی:\n" + main +
+      "\n\nسطح: " + level +
+      "\nدلیل: " + reason;
+
+    if(secondary && secondary !== "null"){
+      output += "\n\nدوره مکمل: " + secondary;
+    }
+
+    resultDiv.innerText = output;
+
+  } catch (err){
+    resultDiv.innerText = "خطای شبکه:\n" + err.message;
+  }
 }
 
-resultDiv.innerText="در حال تحلیل درخواست شما...";
-
-const prompt = `
-شما یک مشاور حرفه‌ای مسیر یادگیری نجوم هستید.
-
-از بین دوره‌های زیر بهترین گزینه ر انتخاب کن.
-
-دوره‌ها:
-1. کیهان‌شناسی و دینامیک کهکشان جامع پیشرفته (پیشرفته)
-2. اخترفیزیک جامع (متوسط)
-3. حساب دیفرانسیل و انتگرال (پایه)
-4. مکانیک سماوی (پیشرفته)
-5. نجوم رصدی (مبتدی)
-
-هدف کاربر:
-${userText}
-
-فقط در قالب JSON پاسخ بده.
-
-{
-"main_course": "نام دوره",
-"level": "سطح دوره",
-"reason": "دلیل پیشنهاد",
-"secondary_course": "یا null"
-}
-`;
-
-try{
-
-const response = await fetch("/api/recommend",{
-method:"POST",
-headers:{
-"Content-Type":"application/json"
-},
-body:JSON.stringify({
-message
+</script>
+</body>
+</html>
