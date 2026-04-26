@@ -1,61 +1,70 @@
 <!DOCTYPE html>
 <html lang="fa">
 <head>
-  <meta charset="UTF-8" />
-  <title>AI Course Recommender</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      direction: rtl;
-      padding: 40px;
-      background-color: #f5f5f5;
-    }
-    textarea {
-      width: 100%;
-      height: 100px;
-      margin-top: 10px;
-    }
-    button {
-      margin-top: 10px;
-      padding: 10px 20px;
-      cursor: pointer;
-    }
-    #result {
-      margin-top: 20px;
-      padding: 15px;
-      background: white;
-      border-radius: 8px;
-      white-space: pre-wrap;
-    }
-  </style>
+<meta charset="UTF-8">
+<title>AI Course Recommender</title>
+
+<style>
+body{
+font-family:sans-serif;
+direction:rtl;
+padding:40px;
+background:#f5f5f5;
+}
+
+textarea{
+width:100%;
+height:100px;
+margin-top:10px;
+}
+
+button{
+margin-top:10px;
+padding:10px 20px;
+cursor:pointer;
+}
+
+#result{
+margin-top:20px;
+padding:15px;
+background:white;
+border-radius:8px;
+white-space:pre-wrap;
+}
+</style>
+
 </head>
 <body>
 
-  <h2>پیشنهاد هوشمند دوره نجوم</h2>
+<h2>پیشنهاد هوشمند دوره نجوم</h2>
 
-  <label>هدفت از یادگیری چیه؟</label>
-  <textarea id="userInput" placeholder="مثلاً می‌خوام درباره سیاه‌چاله‌ها بیشتر بدونم..."></textarea>
+<label>هدفت از یادگیری چیه؟</label>
 
-  <button onclick="recommendCourse()">پیشنهاد بده</button>
+<textarea id="userInput"
+placeholder="مثلاً می‌خوام درباره سیاه‌چاله‌ها بیشتر بدونم..."></textarea>
 
-  <div id="result"></div>
+<button onclick="recommendCourse()">پیشنهاد بده</button>
+
+<div id="result"></div>
 
 <script>
-async function recommendCourse() {
-  const userText = document.getElementById("userInput").value;
-  const resultDiv = document.getElementById("result");
 
-  if (userText.trim() === "") {
-    resultDiv.innerHTML = "لطفاً هدفت رو بنویس 🌌";
-    return;
-  }
+async function recommendCourse(){
 
-  resultDiv.innerHTML = "در حال تحلیل درخواست شما...";
+const userText = document.getElementById("userInput").value.trim();
+const resultDiv = document.getElementById("result");
 
-  const prompt = `
+if(!userText){
+resultDiv.innerText="لطفاً هدفت رو بنویس 🌌";
+return;
+}
+
+resultDiv.innerText="در حال تحلیل درخواست شما...";
+
+const prompt = `
 شما یک مشاور حرفه‌ای مسیر یادگیری نجوم هستید.
 
-از بین دوره‌های زیر، بهترین گزینه را انتخاب کن.
+از بین دوره‌های زیر بهترین گزینه ر انتخاب کن.
 
 دوره‌ها:
 1. کیهان‌شناسی و دینامیک کهکشان جامع پیشرفته (پیشرفته)
@@ -67,50 +76,22 @@ async function recommendCourse() {
 هدف کاربر:
 ${userText}
 
-فقط و فقط در قالب JSON پاسخ بده.
-فرمت خروجی:
+فقط در قالب JSON پاسخ بده.
 
 {
-  "main_course": "نام دوره",
-  "level": "سطح دوره",
-  "reason": "دلیل پیشنهاد",
-  "secondary_course": "یا null"
+"main_course": "نام دوره",
+"level": "سطح دوره",
+"reason": "دلیل پیشنهاد",
+"secondary_course": "یا null"
 }
 `;
 
-  try {
-    const response = await fetch("/api/recommend", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: prompt })
-    });
+try{
 
-    const data = await response.json();
-
-    if (!response.ok || data.error) {
-      resultDiv.innerHTML = "خطا در سرور:\n" + JSON.stringify(data, null, 2);
-      return;
-    }
-
-    const parsed = data;
-
-    resultDiv.innerHTML = `
-✅ پیشنهاد اصلی:
-${parsed.main_course}
-
-سطح: ${parsed.level}
-دلیل: ${parsed.reason}
-${
-  parsed.secondary_course && parsed.secondary_course !== "null"
-    ? "دوره مکمل: " + parsed.secondary_course
-    : ""
-}
-    `;
-  } catch (e) {
-    resultDiv.innerHTML = "خطای شبکه یا سرور:\n" + e.message;
-  }
-}
-</script>
-
-</body>
-</html>
+const response = await fetch("/api/recommend",{
+method:"POST",
+headers:{
+"Content-Type":"application/json"
+},
+body:JSON.stringify({
+message
