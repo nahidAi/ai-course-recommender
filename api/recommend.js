@@ -3,7 +3,7 @@ export async function POST(req) {
     const { message } = await req.json();
 
     const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=" +
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.0-pro:generateContent?key=" +
         process.env.GEMINI_API_KEY,
       {
         method: "POST",
@@ -14,7 +14,7 @@ export async function POST(req) {
               parts: [
                 {
                   text:
-                    "You must respond ONLY with valid JSON. No explanations. Output pure JSON.\n\nUser message:\n" +
+                    "Respond ONLY with valid JSON. No explanations.\n\nUser message:\n" +
                     message,
                 },
               ],
