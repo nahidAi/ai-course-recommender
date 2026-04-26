@@ -1,32 +1,49 @@
+<div>
+  <textarea id="txt" rows="6" style="width: 100%;"></textarea>
+  <button id="gen">Generate</button>
+</div>
+
+<pre id="res"></pre>
+
 <script>
-  document.getElementById("gen").addEventListener("click", async () => {
+  // اینجا مطمئن می‌شویم وقتی DOM آماده شد اجرا شود
+  document.addEventListener("DOMContentLoaded", () => {
 
-    const prompt = document.getElementById("txt").value;
-    const box = document.getElementById("res");
-    box.textContent = "در حال پردازش...";
+    const btn = document.getElementById("gen");
+    const txt = document.getElementById("txt");
+    const res = document.getElementById("res");
 
-    try {
-      const res = await fetch("/api/recommend", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: prompt }),
-      });
+    btn.addEventListener("click", async () => {
 
-      const data = await res.json();
+      res.textContent = "در حال پردازش...";
 
-      if (!res.ok) {
-        box.textContent = "خطا: " + JSON.stringify(data, null, 2);
-        return;
+      const message = txt.value;
+
+      try {
+        const r = await fetch("/api/recommend", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message }),
+        });
+
+        const data = await r.json();
+
+        if (!r.ok) {
+          res.textContent = "خطا:\n" + JSON.stringify(data, null, 2);
+          return;
+        }
+
+        res.textContent =
+          "Course: " + data.main_course + "\n" +
+          "Level: " + data.level + "\n" +
+          "Reason: " + data.reason + "\n" +
+          "Secondary: " + data.secondary_course;
+
+      } catch (err) {
+        res.textContent = "Network Error: " + err.message;
       }
 
-      box.textContent =
-        "Course: " + data.main_course + "\n" +
-        "Level: " + data.level + "\n" +
-        "Reason: " + data.reason + "\n" +
-        "Secondary: " + data.secondary_course;
-    } catch (e) {
-      box.textContent = "خطای شبکه: " + e.message;
-    }
+    });
 
   });
 </script>
