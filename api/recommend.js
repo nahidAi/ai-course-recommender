@@ -2,8 +2,9 @@ export async function POST(req) {
   try {
     const { message } = await req.json();
 
-    const res = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" +
+    // ارسال درخواست به Gemini
+    const response = await fetch(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=" +
         process.env.GEMINI_API_KEY,
       {
         method: "POST",
@@ -14,7 +15,7 @@ export async function POST(req) {
               parts: [
                 {
                   text:
-                    "Please answer ONLY using a clean JSON. No explanations. User message: " +
+                    "You must respond ONLY with valid JSON. No explanations. Output clean JSON.\n\nUser request:\n" +
                     message,
                 },
               ],
@@ -24,8 +25,9 @@ export async function POST(req) {
       }
     );
 
-    const data = await res.json();
+    const data = await response.json();
 
+    // استخراج متن از پاسخ مدل
     const text =
       data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
@@ -36,7 +38,7 @@ export async function POST(req) {
       );
     }
 
-    // Try to extract JSON from the text
+    // پیدا کردن JSON داخل متن (محافظت در برابر اضافات)
     const match = text.match(/\{[\s\S]*\}/);
 
     if (!match) {
@@ -46,11 +48,22 @@ export async function POST(req) {
       );
     }
 
-    // Parse only extracted JSON
-    const parsed = JSON.parse(match[0]);
+    // تبدیل json به آبجکت
+    let parsed;
+    try {
+      parsed = JSON.parse(match[0]);
+    } catch (e) {
+      return Response.json(
+        { error: "JSON_PARSE_FAILED", raw: text },
+        { status: 500 }
+      );
+    }
 
-    return Response.json(parsed);
+    return Response.json(parsed, { status: 200 });
   } catch (err) {
-    return Response.json({ error: err.message }, { status: 500 });
+    return Response.json(
+      { error: "SERVER_CRASH", message: err.message },
+      { status: 500 }
+    );
   }
 }
