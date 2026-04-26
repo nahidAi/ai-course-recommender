@@ -4,11 +4,6 @@ export default async function handler(req, res) {
   }
 
   const { query } = req.body;
-
-  if (!query) {
-    return res.status(400).json({ error: "Query is required" });
-  }
-
   const apiKey = process.env.GEMINI_API_KEY;
 
   try {
@@ -17,34 +12,62 @@ export default async function handler(req, res) {
         apiKey,
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          contents: [
-            {
-              parts: [{ text: query }]
-            }
-          ]
+          contents: [{ parts: [{ text: query }] }]
         })
       }
     );
 
     const data = await response.json();
 
-    console.log("GEMINI RESPONSE:", JSON.stringify(data, null, 2));
+    console.log("FULL GEMINI RESPONSE:", JSON.stringify(data, null, 2));
 
     if (!response.ok) {
       return res.status(response.status).json({ error: data });
     }
 
-    const answer =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-      "No response from model";
+    let answer = null;
+
+    // مسیر استاندارد
+    const parts = data?.candidates?.[0]?.content?.parts;
+    if (Array.isArray(parts)) {
+      for (const p of parts) {
+        if (p.text) {
+          answer = p.text;
+          break;
+        }
+      }
+    }
+
+    // مسیر inlineData
+    if (!answer && Array.isArray(parts)) {
+      for (const p of parts) {
+        if (p.inlineData?.data) {
+          answer = p.inlineData.data;
+          break;
+        }
+      }
+    }
+
+    // مسیر functionCall
+    if (!answer && Array.isArray(parts)) {
+      for (const p of parts) {
+        if (p.functionCall) {
+          answer = JSON.stringify(p.functionCall);
+          break;
+        }
+      }
+    }
+
+    // مسیر fallback نهایی
+    if (!answer) {
+      answer = "No readable text found, see raw response in logs.";
+    }
 
     res.status(200).json({ answer });
-  } catch (err) {
-    console.error("SERVER ERROR:", err);
+  } catch (error) {
+    console.error("SERVER ERROR:", error);
     res.status(500).json({ error: "Server error" });
   }
 }
