@@ -33,11 +33,8 @@
           return;
         }
 
-        res.textContent =
-          "Course: " + data.main_course + "\n" +
-          "Level: " + data.level + "\n" +
-          "Reason: " + data.reason + "\n" +
-          "Secondary: " + data.secondary_course;
+       res.textContent = JSON.stringify(data, null, 2);
+
 
       } catch (err) {
         res.textContent = "Network Error: " + err.message;
