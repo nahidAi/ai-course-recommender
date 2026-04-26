@@ -1,66 +1,40 @@
+import { GoogleGenerativeAI } from "@google/generative-ai";
+
 export async function POST(req) {
   try {
     const { message } = await req.json();
 
-    const MODEL = "models/gemini-2.5-flash";
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/${MODEL}:generateContent?key=${process.env.GEMINI_API_KEY}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                {
-                  text:
-                    "Respond ONLY with valid JSON object. No explanation.\n\nUser message:\n" +
-                    message,
-                },
-              ],
-            },
-          ],
-        }),
-      }
-    );
-
-    const data = await response.json();
-
-    const text =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
-
-    if (!text) {
-      return Response.json(
-        { error: "MODEL_EMPTY_RESPONSE", data },
-        { status: 500 }
-      );
+    const prompt = `
+    You are a course recommendation model.
+    Return ONLY valid JSON:
+    {
+      "main_course": "string",
+      "level": "Beginner | Intermediate | Advanced",
+      "reason": "string",
+      "secondary_course": "string"
     }
+    User request:
+    ${message}
+    `;
 
-    const match = text.match(/\{[\s\S]*\}/);
+    const result = await model.generateContent(prompt);
+    const text = result.response.text();
 
-    if (!match) {
-      return Response.json(
-        { error: "NO_JSON_FOUND", raw: text },
-        { status: 500 }
-      );
-    }
-
-    let parsed;
+    // Try to parse JSON
+    let json;
     try {
-      parsed = JSON.parse(match[0]);
+      json = JSON.parse(text);
     } catch (e) {
-      return Response.json(
-        { error: "JSON_PARSE_FAILED", raw: text },
-        { status: 500 }
-      );
+      console.error("Gemini did not return valid JSON\n", text);
+      return Response.json({ error: "Invalid JSON from model", raw: text }, { status: 500 });
     }
 
-    return Response.json(parsed, { status: 200 });
+    return Response.json(json);
+
   } catch (err) {
-    return Response.json(
-      { error: "SERVER_CRASH", message: err.message },
-      { status: 500 }
-    );
+    return Response.json({ error: err.message }, { status: 500 });
   }
 }
