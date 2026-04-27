@@ -1,33 +1,34 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8" />
-  <title>AI Recommender</title>
+  <title>AI Course Recommender</title>
 </head>
 <body>
 
 <h1>Ask for Recommendation</h1>
 
-<input id="userInput" placeholder="Write something..." />
-<button onclick="askAI()">Send</button>
+<input id="query" placeholder="What do you want to learn?" />
+<button onclick="askRecommendation()">Send</button>
 
 <p id="result"></p>
 
 <script>
-async function askAI() {
-  const text = document.getElementById("userInput").value;
+async function askRecommendation() {
+
+  const query = document.getElementById("query").value;
 
   const res = await fetch("/api/recommend", {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
     },
-    body: JSON.stringify({ query: text })
+    body: JSON.stringify({ query })
   });
 
   const data = await res.json();
 
-  document.getElementById("result").innerText = data.answer;
+  document.getElementById("result").innerText = data.recommendation;
+
 }
 </script>
 
