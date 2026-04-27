@@ -65,3 +65,61 @@ Minimal HTML/CSS/JS UI with:
 ---
 
 ## 📁 Project Structure
+
+
+---
+
+## 🔧 How It Works
+
+1. User submits a question + selects learning level  
+2. Front-end sends a POST request to `/api/recommend`  
+3. Back-end calls Gemini with a structured prompt  
+4. Gemini responds with:
+   - Explanation (based on level)
+   - Suggested learning path
+   - Optional deeper resources  
+5. Front-end displays the result
+
+---
+
+## 🧪 How to Run Locally
+
+Clone the project:
+
+
+Install dependencies (if any):
+
+
+Run development server (Vercel CLI):
+
+Open in browser:
+
+---
+
+## 🚀 Deployment
+
+This project is deployed automatically to Vercel using GitHub CI/CD.  
+Every push to the `main` branch triggers a new deployment.
+
+---
+
+## 📌 Roadmap
+
+- [ ] Improve UI (cards, dark mode, animations)  
+- [ ] Add multiple question history  
+- [ ] Save user preferences locally  
+- [ ] Add full Learning Path Generator  
+- [ ] Release v1.0 with advanced adaptive logic  
+
+---
+
+## 📄 License
+MIT License
+
+---
+
+## ✨ Author
+
+Built with love by **Nahid (ناهید)**  
+Product Designer & YouTuber
+
