@@ -22,13 +22,19 @@
 async function askRecommendation() {
 
   const query = document.getElementById("query").value;
+  const level = document.getElementById("level").value;
+
 
   const res = await fetch("/api/recommend", {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
     },
-    body: JSON.stringify({ query })
+   body: JSON.stringify({
+  question: question,
+  level: level
+})
+
   });
 
   const data = await res.json();
