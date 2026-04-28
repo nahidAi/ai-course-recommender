@@ -1,66 +1,32 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>AI Course Recommender</title>
-</head>
-<body>
+async function askRecommendation() {
+  const queryInput = document.getElementById("query");
+  const query = queryInput.value.trim(); // .trim() فضاهای خالی رو حذف می‌کنه
+  const level = document.getElementById("level").value;
 
-<h1>Ask for Recommendation</h1>
-
-<input id="query" placeholder="What do you want to learn?" />
-<select id="level">
-  <option value="beginner">Beginner</option>
-  <option value="intermediate">Intermediate</option>
-  <option value="advanced">Advanced</option>
-</select>
-
-<button onclick="askRecommendation()">Send</button>
-
-<div id="result"></div>
-
-<script>
-  // برای اطمینان از این‌که JS لود شده
-  console.log("JS loaded");
-
-  async function askRecommendation() {
-    console.log("Button clicked");
-
-    const query = document.getElementById("query").value;
-    const level = document.getElementById("level").value;
-
-    console.log("Sending to API:", { query, level });
-
-    try {
-      const res = await fetch("/api/recommend", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          question: query, // اینجا قبلاً باگ بود
-          level: level
-        })
-      });
-
-      console.log("Raw response object:", res);
-
-      if (!res.ok) {
-        console.error("Response not OK:", res.status, res.statusText);
-        document.getElementById("result").innerText =
-          "Error from API: " + res.status + " " + res.statusText;
-        return;
-      }
-
-      const data = await res.json();
-      console.log("Parsed JSON:", data);
-
-      document.getElementById("result").innerText = data.recommendation || "No recommendation field found.";
-    } catch (err) {
-      console.error("Fetch error:", err);
-      document.getElementById("result").innerText = "Request failed. Check console for details.";
-    }
+  // ۱. بررسی خالی نبودن سؤال
+  if (!query) {
+    alert("ناهید جان، لطفاً ابتدا سؤالت رو بپرس! ✨");
+    queryInput.focus();
+    return;
   }
-</script>
 
-</body>
-</html>
+  console.log("Sending to API:", { question: query, level });
+
+  // باقی کد fetch...
+  try {
+    document.getElementById("result").innerText = "در حال دریافت پاسخ از فضا... 🚀";
+    
+    const res = await fetch("/api/recommend", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        question: query,
+        level: level
+      })
+    });
+    
+    // ... ادامه کد قبلی
+  } catch (err) {
+    // ...
+  }
+}
