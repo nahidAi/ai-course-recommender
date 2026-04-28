@@ -1,3 +1,4 @@
+console.log("### API FILE LOADED SUCCESSFULLY ###");
 export const config = {
   api: {
     bodyParser: true,
