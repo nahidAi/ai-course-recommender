@@ -13,21 +13,17 @@ module.exports = async function handler(req, res) {
     const { question, level } = req.body;
     const apiKey = process.env.GEMINI_API_KEY;
 
+    const model = "models/gemini-2.5-flash";
+
     const prompt = `
-You are an astronomy tutor.
-
 User level: ${level}
-
 Question:
 ${question}
 
-Give a clear and accurate explanation based on the user's level.
-Then recommend what they should learn next.
-    `;
+Give a clear explanation and the next learning recommendation.
+`;
 
-    const url =
-      "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=" +
-      apiKey;
+    const url = `https://generativelanguage.googleapis.com/v1/${model}:generateContent?key=${apiKey}`;
 
     const response = await fetch(url, {
       method: "POST",
@@ -35,13 +31,14 @@ Then recommend what they should learn next.
       body: JSON.stringify({
         contents: [
           {
-            parts: [{ text: prompt }]
-          }
-        ]
+            parts: [{ text: prompt }],
+          },
+        ],
       }),
     });
 
     const data = await response.json();
+    console.log("RAW GEMINI RESPONSE:", JSON.stringify(data, null, 2));
 
     const resultText =
       data?.candidates?.[0]?.content?.parts
@@ -52,7 +49,6 @@ Then recommend what they should learn next.
     return res.status(200).json({
       recommendation: resultText || "No recommendation generated.",
     });
-
   } catch (err) {
     console.error("SERVER ERROR:", err);
     return res.status(500).json({
