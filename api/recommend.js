@@ -1,60 +1,60 @@
-console.log("### API FILE LOADED SUCCESSFULLY ###");
-export const config = {
-  api: {
-    bodyParser: true,
-  },
-};
+export default async function handler(req, res) {
+  // ۱. تنظیم هدرهای CORS برای امنیت و دسترسی
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-module.exports = async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Only POST allowed" });
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
   }
 
   try {
     const { question, level } = req.body;
-    const apiKey = process.env.GEMINI_API_KEY;
+    const API_KEY = process.env.GEMINI_API_KEY;
 
-    const model = "models/gemini-2.5-flash";
+    // ۲. استفاده از دقیق‌ترین مدل طبق تستی که انجام دادی
+    const MODEL_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
 
+    // ۳. پرامپت مهندسی شده برای ناهید (تجربه یادگیری تطبیقی)
     const prompt = `
-User level: ${level}
-Question:
-${question}
+      You are an expert Astronomy educator. 
+      The user is at a "${level}" level.
+      User Question: "${question}"
+      
+      Please provide a structured learning path in 4 steps:
+      1. Simple Explanation (tailored to ${level} level)
+      2. Key Concepts to master
+      3. A "Mind-Blowing" fact about this topic
+      4. Recommended next question to explore.
+      
+      Format the response using clean Markdown.
+    `;
 
-Give a clear explanation and the next learning recommendation.
-`;
-
-    const url = `https://generativelanguage.googleapis.com/v1/${model}:generateContent?key=${apiKey}`;
-
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+    const response = await fetch(MODEL_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contents: [
-          {
-            parts: [{ text: prompt }],
-          },
-        ],
-      }),
+        contents: [{ parts: [{ text: prompt }] }]
+      })
     });
 
     const data = await response.json();
-    console.log("RAW GEMINI RESPONSE:", JSON.stringify(data, null, 2));
 
-    const resultText =
-      data?.candidates?.[0]?.content?.parts
-        ?.map((p) => p.text || "")
-        .join(" ")
-        .trim() || null;
+    // لاگ برای دیباگ در پنل Vercel
+    console.log("GEMINI SUCCESSFUL RESPONSE:", JSON.stringify(data));
 
-    return res.status(200).json({
-      recommendation: resultText || "No recommendation generated.",
-    });
-  } catch (err) {
-    console.error("SERVER ERROR:", err);
-    return res.status(500).json({
-      error: "Internal Server Error",
-      details: err.message,
-    });
+    if (data.candidates && data.candidates[0].content) {
+      const text = data.candidates[0].content.parts[0].text;
+      res.status(200).json({ recommendation: text });
+    } else {
+      res.status(500).json({ 
+        error: "Model returned empty", 
+        raw: data 
+      });
+    }
+
+  } catch (error) {
+    console.error("BACKEND ERROR:", error);
+    res.status(500).json({ error: error.message });
   }
-};
+}
