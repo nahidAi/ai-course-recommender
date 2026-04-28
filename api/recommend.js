@@ -1,3 +1,9 @@
+export const config = {
+  api: {
+    bodyParser: true,
+  },
+};
+
 module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Only POST allowed" });
@@ -25,21 +31,17 @@ Then recommend what they should learn next.
 
     const response = await fetch(url, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         contents: [
           {
             parts: [{ text: prompt }]
           }
         ]
-      })
+      }),
     });
 
     const data = await response.json();
-
-    console.log("RAW GEMINI RESPONSE:", JSON.stringify(data, null, 2));
 
     const resultText =
       data?.candidates?.[0]?.content?.parts
@@ -48,14 +50,14 @@ Then recommend what they should learn next.
         .trim() || null;
 
     return res.status(200).json({
-      recommendation: resultText || "No recommendation generated."
+      recommendation: resultText || "No recommendation generated.",
     });
 
   } catch (err) {
     console.error("SERVER ERROR:", err);
     return res.status(500).json({
       error: "Internal Server Error",
-      details: err.message
+      details: err.message,
     });
   }
 };
