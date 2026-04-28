@@ -5,8 +5,8 @@ module.exports = async function handler(req, res) {
 
   try {
     const { question, level } = req.body;
-    const { query } = req.body;
     const apiKey = process.env.GEMINI_API_KEY;
+
     const prompt = `
 You are an astronomy tutor.
 
@@ -15,11 +15,9 @@ User level: ${level}
 Question:
 ${question}
 
-Explain the answer in a way appropriate for the user's level.
-
-Also recommend what they should learn next.
-`;
-
+Give a clear and accurate explanation based on the user's level.
+Then recommend what they should learn next.
+    `;
 
     const url =
       "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=" +
@@ -33,7 +31,7 @@ Also recommend what they should learn next.
       body: JSON.stringify({
         contents: [
           {
-            parts: [{ text: query }]
+            parts: [{ text: prompt }]
           }
         ]
       })
@@ -43,8 +41,7 @@ Also recommend what they should learn next.
 
     console.log("RAW GEMINI RESPONSE:", JSON.stringify(data, null, 2));
 
-    // Extract text safely
-    let resultText =
+    const resultText =
       data?.candidates?.[0]?.content?.parts
         ?.map((p) => p.text || "")
         .join(" ")
