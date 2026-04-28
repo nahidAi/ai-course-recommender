@@ -1,32 +1,32 @@
 async function askRecommendation() {
   const queryInput = document.getElementById("query");
-  const query = queryInput.value.trim(); // .trim() فضاهای خالی رو حذف می‌کنه
+  const query = queryInput.value.trim();
   const level = document.getElementById("level").value;
 
-  // ۱. بررسی خالی نبودن سؤال
   if (!query) {
-    alert("ناهید جان، لطفاً ابتدا سؤالت رو بپرس! ✨");
+    alert("ناهید جان، لطفاً اول سؤا رو وارد کن ✨");
     queryInput.focus();
     return;
   }
 
   console.log("Sending to API:", { question: query, level });
 
-  // باقی کد fetch...
   try {
     document.getElementById("result").innerText = "در حال دریافت پاسخ از فضا... 🚀";
-    
+
     const res = await fetch("/api/recommend", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers:  "Content-Type": "application/json" },
       body: JSON.stringify({
         question: query,
-        level: level
-      })
+        level: level,
+      }),
     });
-    
-    // ... ادامه کد قبلی
+
+    const data = await res.json();
+    document.getElementById("result").innerText = data.recommendation || "خطایی رخ داد!";
   } catch (err) {
-    // ...
+    console.error(err);
+    document.getElementById("result").innerText = "مشکل در ارتباط با سرور �";
   }
 }
